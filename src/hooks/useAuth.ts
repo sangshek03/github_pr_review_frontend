@@ -12,7 +12,7 @@ interface AuthData {
 interface AuthState {
   isAuthenticated: boolean
   loading: boolean
-  user: { id: string } | null
+  user: AuthData | null
 }
 
 export function useAuth(): AuthState {
@@ -23,81 +23,59 @@ export function useAuth(): AuthState {
   })
 
   useEffect(() => {
-    const checkAuth = () => {
-      try {
-        // Get cookie on client side
-        const cookies = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('auth-cookie='))
+    const controller = new AbortController()
 
-        if (!cookies) {
-          setAuthState({
-            isAuthenticated: false,
-            loading: false,
-            user: null,
-          })
+    const checkAuth = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL
+        if (!baseUrl) {
+          console.error('❌ Missing NEXT_PUBLIC_BACKEND_API_URL in env')
+          setAuthState({ isAuthenticated: false, loading: false, user: null })
           return
         }
 
-        let cookieValue = cookies.split('=')[1]
+        console.log('🔍 Checking auth at:', `${baseUrl}/auth/me`)
 
-        // If it starts with 'j%3A', it's JSON stringified and URL encoded
-        if (cookieValue.startsWith('j%3A')) {
-          cookieValue = cookieValue.substring(4) // Remove 'j%3A' prefix (URL encoded 'j:')
+        const res = await fetch(`${baseUrl}/auth/me`, {
+          method: 'GET',
+          credentials: 'include', // 🚨 send cookies
+          signal: controller.signal,
+        })
+
+        console.log('📡 Auth response status:', res.status, res.statusText)
+
+        if (!res.ok) {
+          console.log('❌ Auth response not ok:', res.status)
+          setAuthState({ isAuthenticated: false, loading: false, user: null })
+          return
         }
 
-        // URL decode the cookie value
-        cookieValue = decodeURIComponent(cookieValue)
+        const data = await res.json()
+        console.log('📦 Auth response data:', data)
 
-        const authData: AuthData = JSON.parse(cookieValue)
-
-        if (authData && authData.user_verified) {
+        if (data?.user) {
+          console.log('✅ User authenticated:', data.user.user_id)
           setAuthState({
             isAuthenticated: true,
             loading: false,
-            user: { id: authData.user_id },
+            user: data.user,
           })
         } else {
-          setAuthState({
-            isAuthenticated: false,
-            loading: false,
-            user: null,
-          })
+          console.log('⚠️ No user in response')
+          setAuthState({ isAuthenticated: false, loading: false, user: null })
         }
-      } catch (error) {
-        console.error('Error checking auth:', error)
-        setAuthState({
-          isAuthenticated: false,
-          loading: false,
-          user: null,
-        })
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('💥 Auth check failed:', error)
+          setAuthState({ isAuthenticated: false, loading: false, user: null })
+        }
       }
     }
 
     checkAuth()
 
-    // Listen for storage events to detect auth changes in other tabs
-    const handleStorageChange = () => {
-      checkAuth()
-    }
-
-    // Listen for cookie changes
-    const interval = setInterval(checkAuth, 1000)
-
-    window.addEventListener('storage', handleStorageChange)
-
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener('storage', handleStorageChange)
-    }
+    return () => controller.abort()
   }, [])
 
   return authState
-}
-
-export function logout() {
-  // Clear the auth cookie
-  document.cookie = 'auth-cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict'
-  // Redirect to login
-  window.location.href = '/login'
 }

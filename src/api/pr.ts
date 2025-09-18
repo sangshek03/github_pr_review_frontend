@@ -17,9 +17,11 @@ export interface AnalyzePRRequest {
 }
 
 export interface AnalysisResponse {
+  
   success: boolean
   message: string
   data: {
+    pr_summary_id:string
     summary: string
     issues_found: string[]
     suggestions: string[]
@@ -38,6 +40,7 @@ export interface AnalysisResponse {
       scalability: number
       testing: number
     }
+    session_id:string
   }
 }
 
@@ -61,6 +64,7 @@ export interface PRSummary {
     scalability: number
     maintainability: number
   }
+  session_id: string
 }
 
 export interface PRSummariesResponse {
@@ -102,10 +106,11 @@ export const prApi = {
   },
 
   // Get specific PR details by ID
-  getPRById: async (prId: string): Promise<PRDetailsResponse> => {
+  getPRById: async (prId: string): Promise<PRSummary> => {
     try {
-      const response = await apiClient.get<ApiResponse<PRDetailsResponse>>(`/pr/${prId}`)
-      return response.data.data!
+      console.log(prId)
+      const response = await apiClient.get<PRSummary>(`/pr/pr_summary/${prId}`)
+      return response.data
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to fetch PR details')
     }

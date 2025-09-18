@@ -3,7 +3,8 @@
     "allow": [
       "Read(//d/practise/pr_agent_backend/**)",
       "Bash(npm install:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
