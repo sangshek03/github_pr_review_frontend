@@ -9,10 +9,7 @@ import {
     type AnalysisResponse,
     type PRSummary,
 } from '@/api'
-import {
-    PRDetailsResponse,
-    FetchAndSaveResponse,
-} from '@/types/pr'
+import { PRDetailsResponse, FetchAndSaveResponse } from '@/types/pr'
 import { Accordion } from '@/components/ui/Accordion'
 
 const loadingQuotes = [
@@ -43,6 +40,7 @@ export default function Dashboard() {
     const [prSummaries, setPrSummaries] = useState<PRSummary[]>([])
     const [loadingSummaries, setLoadingSummaries] = useState(true)
     const [error, setError] = useState('')
+     const [expandedPRIndex, setExpandedPRIndex] = useState<number | null>(null);
 
     useEffect(() => {
         fetchRecentPRs()
@@ -77,6 +75,7 @@ export default function Dashboard() {
         try {
             const data = await prApi.getPRSummaries()
             setPrSummaries(data)
+            // console.log(data)
         } catch (err) {
             console.error('Failed to fetch PR summaries:', err)
         } finally {
@@ -110,6 +109,9 @@ export default function Dashboard() {
             setLoading(false)
         }
     }
+      const togglePRExpansion = (index: number) => {
+    setExpandedPRIndex(expandedPRIndex === index ? null : index);
+  };
 
     const handleAnalyzePR = async () => {
         setAnalyzing(true)
@@ -120,8 +122,7 @@ export default function Dashboard() {
             const data = await prApi.analyzePR(analyzeRequest)
 
             setAnalysisResult(data)
-            localStorage.setItem('pr_summary_id', data.data.pr_summary_id);
- 
+            localStorage.setItem('pr_summary_id', data.data.pr_summary_id)
         } catch (err: any) {
             setError(err.message || 'Failed to analyze PR. Please try again.')
         } finally {
@@ -135,10 +136,10 @@ export default function Dashboard() {
         }
     }
 
-
     // Helper function to get summary for a PR
     const getSummaryForPR = (prIndex: number): PRSummary | null => {
         // Assuming summaries are ordered same as PRs (most recent first)
+        console.log(prSummaries[prIndex], prIndex)
         return prSummaries[prIndex] || null
     }
 
@@ -174,373 +175,6 @@ export default function Dashboard() {
         if (rating >= 6) return '👍'
         if (rating >= 4) return '🤔'
         return '⚠️'
-    }
-
-    // Unified PR Item Component
-    const UnifiedPRItem = ({
-        pr,
-        summary,
-        hasAnalysis,
-        formatDate,
-        router,
-    }: {
-        pr: PRDetailsResponse
-        summary: PRSummary | null
-        hasAnalysis: boolean
-        formatDate: (date: string) => string
-        router: any
-    }) => {
-        const [isExpanded, setIsExpanded] = useState(false)
-
-        return (
-            <div className="border border-divider rounded-2xl bg-gradient-to-br from-surface to-background/50 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                {/* PR Header - Always Visible */}
-                <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="w-full p-6 text-left focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors duration-200 hover:bg-background/30"
-                >
-                    <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="relative">
-                                    <img
-                                        src={pr.data.metadata.user.avatar_url}
-                                        alt={pr.data.metadata.user.login}
-                                        className="w-12 h-12 rounded-full border-2 border-primary/20"
-                                    />
-                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-surface"></div>
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <span className="font-semibold text-text-primary">
-                                            {pr.data.metadata.user.login}
-                                        </span>
-                                        <span
-                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                pr.data.metadata.state ===
-                                                'open'
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                                    : pr.data.metadata.state ===
-                                                      'closed'
-                                                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                                                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                            }`}
-                                        >
-                                            <div
-                                                className={`w-2 h-2 rounded-full mr-1 ${
-                                                    pr.data.metadata.state ===
-                                                    'open'
-                                                        ? 'bg-green-500'
-                                                        : pr.data.metadata
-                                                              .state ===
-                                                          'closed'
-                                                        ? 'bg-red-500'
-                                                        : 'bg-purple-500'
-                                                }`}
-                                            ></div>
-                                            {pr.data.metadata.state}
-                                        </span>
-                                        {hasAnalysis && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
-                                                <svg
-                                                    className="w-3 h-3"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                    />
-                                                </svg>
-                                                AI Analysis Available
-                                            </span>
-                                        )}
-                                    </div>
-                                    <h3 className="text-lg font-bold text-text-primary mb-2">
-                                        #{pr.data.metadata.number}{' '}
-                                        {pr.data.metadata.title}
-                                    </h3>
-                                    <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
-                                        <span className="flex items-center gap-1">
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                                                />
-                                            </svg>
-                                            {pr.data.metadata.base.ref} ←{' '}
-                                            {pr.data.metadata.head.ref}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                />
-                                            </svg>
-                                            {formatDate(
-                                                pr.data.metadata.created_at
-                                            )}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                />
-                                            </svg>
-                                            {pr.data.files.length} files
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                                                />
-                                            </svg>
-                                            {pr.data.reviews.length} reviews
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            {hasAnalysis && summary && (
-                                <div className="flex items-center gap-2">
-                                    <span
-                                        className={`text-2xl font-bold ${getScoreColor(
-                                            summary.overall_score
-                                        )}`}
-                                    >
-                                        {summary.overall_score}/10
-                                    </span>
-                                    <span className="text-2xl">
-                                        {getRatingEmoji(summary.overall_score)}
-                                    </span>
-                                </div>
-                            )}
-                            <svg
-                                className={`w-5 h-5 text-text-secondary transition-transform duration-300 ${
-                                    isExpanded ? 'rotate-180' : ''
-                                }`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 9l-7 7-7-7"
-                                />
-                            </svg>
-                        </div>
-                    </div>
-                </button>
-
-                {/* Expanded Content */}
-                <div
-                    className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                        isExpanded
-                            ? 'max-h-[2000px] opacity-100'
-                            : 'max-h-0 opacity-0'
-                    }`}
-                >
-                    <div className="px-6 pb-6 border-t border-divider/50">
-                        {hasAnalysis && summary ? (
-                            <div className="space-y-4 pt-6">
-                                {/* Summary Overview */}
-                                <div className="bg-background rounded-lg p-4">
-                                    <h4 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
-                                        <span>📊</span> Analysis Summary
-                                    </h4>
-                                    <p className="text-text-secondary mb-4">
-                                        {summary.summary}
-                                    </p>
-
-                                    {/* Code Quality Ratings */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {Object.entries(
-                                            summary.code_quality_rating
-                                        ).map(([key, value]) => (
-                                            <div
-                                                key={key}
-                                                className="flex items-center justify-between"
-                                            >
-                                                <span className="text-text-secondary capitalize">
-                                                    {key}:
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <span
-                                                        className={`font-medium ${getScoreColor(
-                                                            value
-                                                        )}`}
-                                                    >
-                                                        {value}/10
-                                                    </span>
-                                                    <span>
-                                                        {getRatingEmoji(value)}
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Issues Found */}
-                                {summary.issues_found.length > 0 && (
-                                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                                        <h4 className="font-semibold text-red-800 dark:text-red-200 mb-2 flex items-center gap-2">
-                                            <span>⚠️</span> Issues Found (
-                                            {summary.issues_found.length})
-                                        </h4>
-                                        <ul className="space-y-1">
-                                            {summary.issues_found
-                                                .slice(0, 3)
-                                                .map((issue, index) => (
-                                                    <li
-                                                        key={index}
-                                                        className="text-sm text-red-700 dark:text-red-300 flex items-start gap-2"
-                                                    >
-                                                        <span>•</span>
-                                                        <span>{issue}</span>
-                                                    </li>
-                                                ))}
-                                            {summary.issues_found.length >
-                                                3 && (
-                                                <li className="text-sm text-red-600 dark:text-red-400 italic">
-                                                    +
-                                                    {summary.issues_found
-                                                        .length - 3}{' '}
-                                                    more issues
-                                                </li>
-                                            )}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {/* Suggestions */}
-                                {summary.suggestions.length > 0 && (
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                                        <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
-                                            <span>💡</span> Key Suggestions
-                                        </h4>
-                                        <ul className="space-y-1">
-                                            {summary.suggestions
-                                                .slice(0, 3)
-                                                .map((suggestion, index) => (
-                                                    <li
-                                                        key={index}
-                                                        className="text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2"
-                                                    >
-                                                        <span>•</span>
-                                                        <span>
-                                                            {suggestion}
-                                                        </span>
-                                                    </li>
-                                                ))}
-                                            {summary.suggestions.length > 3 && (
-                                                <li className="text-sm text-blue-600 dark:text-blue-400 italic">
-                                                    +
-                                                    {summary.suggestions
-                                                        .length - 3}{' '}
-                                                    more suggestions
-                                                </li>
-                                            )}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {/* Chat Button */}
-                                <div className="flex justify-center pt-4">
-                                    <button
-                                        onClick={() =>
-                                            router.push(
-                                                `/review/${summary.session_id}`
-                                            )
-                                        }
-                                        className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2"
-                                    >
-                                        <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                                            />
-                                        </svg>
-                                        Chat with AI to know more
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="pt-6 text-center">
-                                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
-                                    <svg
-                                        className="w-12 h-12 text-gray-400 mx-auto mb-3"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                        />
-                                    </svg>
-                                    <h4 className="font-medium text-text-primary mb-2">
-                                        No AI Analysis Available
-                                    </h4>
-                                    <p className="text-sm text-text-secondary">
-                                        This PR hasn't been analyzed yet. Run an
-                                        analysis to see detailed insights and
-                                        recommendations.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        )
     }
 
     return (
@@ -598,468 +232,450 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Enhanced Unified PR Dashboard */}
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-600 flex items-center justify-center">
-                            <svg
-                                className="w-6 h-6 text-white"
+                   <div className="flex-col">
+      {/* Enhanced Unified PR Dashboard */}
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-600 flex items-center justify-center">
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-text-primary">
+            Recent Pull Requests
+          </h2>
+        </div>
+
+        {loadingRecent || loadingSummaries ? (
+          // ---------------- Loading State ----------------
+          <div className="flex justify-center py-16">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary/20 border-t-primary"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary">
+                <svg
+                  className="w-8 h-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        ) : recentPRs.length === 0 ? (
+          // ---------------- Empty State ----------------
+          <div className="text-center py-16 rounded-2xl bg-gradient-to-br from-surface to-background border border-divider/50 shadow-lg">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mx-auto mb-6">
+              <svg
+                className="w-10 h-10 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-text-primary mb-3">
+              No PRs Found
+            </h3>
+            <p className="text-text-secondary mb-6 max-w-md mx-auto">
+              Start by analyzing your first GitHub Pull Request to see it appear
+              here with detailed insights
+            </p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Analyze Your First PR
+            </button>
+          </div>
+        ) : (
+          // ---------------- PR List State ----------------
+          <div className="space-y-4">
+            {recentPRs.map((pr, prIndex) => {
+              const correspondingSummary = getSummaryForPR(prIndex);
+              const hasAnalysis = hasSummary(prIndex);
+              const isExpanded = expandedPRIndex === prIndex;
+
+              return (
+                <div key={pr.data.metadata.id}>
+                  {/* PR Card */}
+                  <div
+                    className={`group relative rounded-2xl bg-gradient-to-br from-surface to-background/50 border transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden cursor-pointer ${
+                      hasAnalysis
+                        ? 'border-emerald-200 hover:border-emerald-400 dark:border-emerald-800 dark:hover:border-emerald-600'
+                        : 'border-divider/50 hover:border-primary/30'
+                    } ${isExpanded ? '!border-primary/50' : ''}`}
+                    onClick={() => hasAnalysis && togglePRExpansion(prIndex)}
+                  >
+                    {/* Analysis Available Indicator */}
+                    {hasAnalysis && (
+                      <div className="absolute top-3 right-3 z-10">
+                        <div className="flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                            />
+                          </svg>
+                          Analysis Ready
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Connection Line Visual Indicator */}
+                    {hasAnalysis && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-teal-500"></div>
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="relative">
+                              <img
+                                src={pr.data.metadata.user.avatar_url}
+                                alt={pr.data.metadata.user.login}
+                                className="w-10 h-10 rounded-full border-2 border-primary/20"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-surface"></div>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-text-primary block">
+                                {pr.data.metadata.user.login}
+                              </span>
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  pr.data.metadata.state === 'open'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                    : pr.data.metadata.state === 'closed'
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                }`}
+                              >
+                                <div
+                                  className={`w-2 h-2 rounded-full mr-1 ${
+                                    pr.data.metadata.state === 'open'
+                                      ? 'bg-green-500'
+                                      : pr.data.metadata.state === 'closed'
+                                      ? 'bg-red-500'
+                                      : 'bg-purple-500'
+                                  }`}
+                                ></div>
+                                {pr.data.metadata.state}
+                              </span>
+                            </div>
+                          </div>
+
+                          <h3 className="text-lg font-bold mb-3 text-text-primary group-hover:text-primary transition-colors">
+                            #{pr.data.metadata.number} {pr.data.metadata.title}
+                          </h3>
+
+                          <div className="flex items-center gap-3 text-sm text-text-secondary mb-3">
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-4 h-4"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                            >
+                              >
                                 <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
                                 />
-                            </svg>
-                        </div>
-                        <h2 className="text-3xl font-bold text-text-primary">
-                            Recent Pull Requests
-                        </h2>
-                    </div>
+                              </svg>
+                              {pr.data.metadata.base.ref} ←{' '}
+                              {pr.data.metadata.head.ref}
+                            </span>
+                          </div>
 
-                    {loadingRecent || loadingSummaries ? (
-                        // ---------------- Loading State ----------------
-                        <div className="flex justify-center py-16">
-                            <div className="relative">
-                                <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary/20 border-t-primary"></div>
-                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary">
-                                    <svg
-                                        className="w-8 h-8"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              {formatDate(pr.data.metadata.created_at)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                              {pr.data.files.length} files
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                />
+                              </svg>
+                              {pr.data.reviews.length} reviews
+                            </span>
+                          </div>
                         </div>
-                    ) : recentPRs.length === 0 ? (
-                        // ---------------- Empty State ----------------
-                        <div className="text-center py-16 rounded-2xl bg-gradient-to-br from-surface to-background border border-divider/50 shadow-lg">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mx-auto mb-6">
-                                <svg
-                                    className="w-10 h-10 text-gray-400"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-semibold text-text-primary mb-3">
-                                No PRs Found
-                            </h3>
-                            <p className="text-text-secondary mb-6 max-w-md mx-auto">
-                                Start by analyzing your first GitHub Pull
-                                Request to see it appear here with detailed
-                                insights
-                            </p>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
+                            hasAnalysis
+                              ? 'bg-emerald-100 dark:bg-emerald-900/30 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50'
+                              : 'bg-primary/10 group-hover:bg-primary/20'
+                          }`}
+                        >
+                          {hasAnalysis ? (
+                            <svg
+                              className={`w-5 h-5 text-emerald-600 dark:text-emerald-400 transition-transform duration-300 ${
+                                isExpanded ? 'rotate-90' : 'group-hover:translate-x-1'
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                    />
-                                </svg>
-                                Analyze Your First PR
-                            </button>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform duration-300"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          )}
                         </div>
-                    ) : (
-                        // ---------------- PR List State ----------------
-                        <div className="space-y-4">
-                            {recentPRs.map((pr, prIndex) => {
-                                const correspondingSummary =
-                                    getSummaryForPR(prIndex)
-                                const hasAnalysis = hasSummary(prIndex)
-
-                                return (
-                                    <div
-                                        key={pr.data.metadata.id}
-                                        className={`group relative rounded-2xl bg-gradient-to-br from-surface to-background/50 border transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden ${
-                                            hasAnalysis
-                                                ? 'border-emerald-200 hover:border-emerald-400 dark:border-emerald-800 dark:hover:border-emerald-600'
-                                                : 'border-divider/50 hover:border-primary/30'
-                                        }`}
-                                    >
-                                        {/* Analysis Available Indicator */}
-                                        {hasAnalysis && (
-                                            <div className="absolute top-3 right-3 z-10">
-                                                <div className="flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
-                                                    <svg
-                                                        className="w-3 h-3"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                        />
-                                                    </svg>
-                                                    Analysis Ready
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Connection Line Visual Indicator */}
-                                        {hasAnalysis && (
-                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-teal-500"></div>
-                                        )}
-
-                                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                        <div className="relative p-6">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-3 mb-3">
-                                                        <div className="relative">
-                                                            <img
-                                                                src={
-                                                                    pr.data
-                                                                        .metadata
-                                                                        .user
-                                                                        .avatar_url
-                                                                }
-                                                                alt={
-                                                                    pr.data
-                                                                        .metadata
-                                                                        .user
-                                                                        .login
-                                                                }
-                                                                className="w-10 h-10 rounded-full border-2 border-primary/20"
-                                                            />
-                                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-surface"></div>
-                                                        </div>
-                                                        <div>
-                                                            <span className="font-semibold text-text-primary block">
-                                                                {
-                                                                    pr.data
-                                                                        .metadata
-                                                                        .user
-                                                                        .login
-                                                                }
-                                                            </span>
-                                                            <span
-                                                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                                    pr.data
-                                                                        .metadata
-                                                                        .state ===
-                                                                    'open'
-                                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                                                        : pr
-                                                                              .data
-                                                                              .metadata
-                                                                              .state ===
-                                                                          'closed'
-                                                                        ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                                                                        : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                                                }`}
-                                                            >
-                                                                <div
-                                                                    className={`w-2 h-2 rounded-full mr-1 ${
-                                                                        pr.data
-                                                                            .metadata
-                                                                            .state ===
-                                                                        'open'
-                                                                            ? 'bg-green-500'
-                                                                            : pr
-                                                                                  .data
-                                                                                  .metadata
-                                                                                  .state ===
-                                                                              'closed'
-                                                                            ? 'bg-red-500'
-                                                                            : 'bg-purple-500'
-                                                                    }`}
-                                                                ></div>
-                                                                {
-                                                                    pr.data
-                                                                        .metadata
-                                                                        .state
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <h3 className="text-lg font-bold mb-3 text-text-primary group-hover:text-primary transition-colors">
-                                                        #
-                                                        {
-                                                            pr.data.metadata
-                                                                .number
-                                                        }{' '}
-                                                        {pr.data.metadata.title}
-                                                    </h3>
-
-                                                    <div className="flex items-center gap-3 text-sm text-text-secondary mb-3">
-                                                        <span className="flex items-center gap-1">
-                                                            <svg
-                                                                className="w-4 h-4"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                                                                />
-                                                            </svg>
-                                                            {
-                                                                pr.data.metadata
-                                                                    .base.ref
-                                                            }{' '}
-                                                            ←{' '}
-                                                            {
-                                                                pr.data.metadata
-                                                                    .head.ref
-                                                            }
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
-                                                        <span className="flex items-center gap-1">
-                                                            <svg
-                                                                className="w-4 h-4"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                                />
-                                                            </svg>
-                                                            {formatDate(
-                                                                pr.data.metadata
-                                                                    .created_at
-                                                            )}
-                                                        </span>
-                                                        <span className="flex items-center gap-1">
-                                                            <svg
-                                                                className="w-4 h-4"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                                />
-                                                            </svg>
-                                                            {
-                                                                pr.data.files
-                                                                    .length
-                                                            }{' '}
-                                                            files
-                                                        </span>
-                                                        <span className="flex items-center gap-1">
-                                                            <svg
-                                                                className="w-4 h-4"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                                                                />
-                                                            </svg>
-                                                            {
-                                                                pr.data.reviews
-                                                                    .length
-                                                            }{' '}
-                                                            reviews
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div
-                                                    className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
-                                                        hasAnalysis
-                                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50'
-                                                            : 'bg-primary/10 group-hover:bg-primary/20'
-                                                    }`}
-                                                >
-                                                    {hasAnalysis ? (
-                                                        <svg
-                                                            className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform duration-300"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                            />
-                                                        </svg>
-                                                    ) : (
-                                                        <svg
-                                                            className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform duration-300"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M9 5l7 7-7 7"
-                                                            />
-                                                        </svg>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-
-                    {/* Enhanced PR Summaries Section */}
-                    <div className="space-y-6 min-h-[400px]">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                                <svg
-                                    className="w-5 h-5 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                    />
-                                </svg>
-                            </div>
-                            <h2 className="text-2xl font-bold text-text-primary">
-                                Analysis Summaries
-                            </h2>
-                        </div>
-
-                        {loadingSummaries ? (
-                            <div className="flex justify-center py-12">
-                                <div className="relative">
-                                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-500/20 border-t-emerald-500"></div>
-                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-emerald-500">
-                                        <svg
-                                            className="w-6 h-6"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                            />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : prSummaries.length === 0 ? (
-                            <div className="text-center py-12 rounded-2xl bg-gradient-to-br from-surface to-background border border-divider/50 shadow-lg">
-                                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-200 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center mx-auto mb-4">
-                                    <svg
-                                        className="w-8 h-8 text-emerald-500"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                        />
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-semibold text-text-primary mb-2">
-                                    No Analysis Summaries
-                                </h3>
-                                <p className="text-text-secondary mb-4">
-                                    AI analysis summaries will appear here after
-                                    you analyze PRs
-                                </p>
-                                <div className="text-sm text-text-secondary bg-primary/5 rounded-lg p-3 max-w-sm mx-auto">
-                                    💡 Tip: Complete PR analysis to generate
-                                    detailed summaries with insights
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-2 text-text-secondary text-sm bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
-                                    <svg
-                                        className="w-4 h-4 text-emerald-500"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                    Click on any summary to expand and see
-                                    detailed analysis results
-                                </div>
-                                <Accordion summaries={prSummaries} />
-                            </div>
-                        )}
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Summary Panel - Appears below the PR when expanded */}
+                  {isExpanded && hasAnalysis && correspondingSummary && (
+                    <div className="mt-2 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 p-6 shadow-lg">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                            />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-bold text-text-primary">
+                          Analysis Summary
+                        </h3>
+                      </div>
+                      
+                      {/* Summary content - adjust based on your data structure */}
+                      <div className="prose dark:prose-invert max-w-none">
+  {/* Summary */}
+  <p className="text-text-secondary mb-4">
+    {correspondingSummary.summary || "No summary available"}
+  </p>
+
+  {/* Well Handled Cases & Future Enhancements */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+      <h4 className="font-semibold text-text-primary mb-2 flex items-center gap-2">
+        <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Well Handled Cases
+      </h4>
+      <ul className="text-sm text-text-secondary">
+        {correspondingSummary.well_handled_cases?.length > 0 ? (
+          correspondingSummary.well_handled_cases.map((caseItem, idx) => (
+            <li key={idx} className="mb-1">
+              • <span className="font-medium">{caseItem.area}:</span> {caseItem.reason}
+            </li>
+          ))
+        ) : (
+          <li>No well handled cases</li>
+        )}
+      </ul>
+    </div>
+
+    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+      <h4 className="font-semibold text-text-primary mb-2 flex items-center gap-2">
+        <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Future Enhancements
+      </h4>
+      <ul className="text-sm text-text-secondary">
+        {correspondingSummary.future_enhancements?.length > 0 ? (
+          correspondingSummary.future_enhancements.map((enh, idx) => (
+            <li key={idx} className="mb-1">• {enh}</li>
+          ))
+        ) : (
+          <li>No future enhancements suggested</li>
+        )}
+      </ul>
+    </div>
+  </div>
+
+  {/* Issues, Suggestions, Tests */}
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+      <h4 className="font-semibold text-red-500 mb-2">Issues Found</h4>
+      <ul className="text-sm text-text-secondary">
+        {correspondingSummary.issues_found?.length > 0 ? (
+          correspondingSummary.issues_found.map((issue, idx) => (
+            <li key={idx} className="mb-1">• {issue}</li>
+          ))
+        ) : (
+          <li>No issues found</li>
+        )}
+      </ul>
+    </div>
+
+    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+      <h4 className="font-semibold text-amber-500 mb-2">Suggestions</h4>
+      <ul className="text-sm text-text-secondary">
+        {correspondingSummary.suggestions?.length > 0 ? (
+          correspondingSummary.suggestions.map((sugg, idx) => (
+            <li key={idx} className="mb-1">• {sugg}</li>
+          ))
+        ) : (
+          <li>No suggestions</li>
+        )}
+      </ul>
+    </div>
+
+    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
+      <h4 className="font-semibold text-green-500 mb-2">Test Recommendations</h4>
+      <ul className="text-sm text-text-secondary">
+        {correspondingSummary.test_recommendations?.length > 0 ? (
+          correspondingSummary.test_recommendations.map((test, idx) => (
+            <li key={idx} className="mb-1">• {test}</li>
+          ))
+        ) : (
+          <li>No test recommendations</li>
+        )}
+      </ul>
+    </div>
+  </div>
+
+  {/* Code Quality Ratings */}
+  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm mb-4">
+    <h4 className="font-semibold text-text-primary mb-2">Code Quality Rating</h4>
+    <ul className="text-sm text-text-secondary grid grid-cols-2 md:grid-cols-4 gap-2">
+      <li>Testing: {correspondingSummary.code_quality_rating?.testing ?? "N/A"}</li>
+      <li>Readability: {correspondingSummary.code_quality_rating?.readability ?? "N/A"}</li>
+      <li>Scalability: {correspondingSummary.code_quality_rating?.scalability ?? "N/A"}</li>
+      <li>Maintainability: {correspondingSummary.code_quality_rating?.maintainability ?? "N/A"}</li>
+    </ul>
+  </div>
+
+  {/* Overall Score */}
+  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+    <h4 className="font-semibold text-text-primary mb-2">Overall Score</h4>
+    <p className="text-sm text-text-secondary">
+      {correspondingSummary.overall_score ?? "No score available"} / 10
+    </p>
+  </div>
+</div>
+
+                    </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
             </div>
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-surface rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
                             {/* Analyzing State */}
