@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GitHub PR Review Agent - Frontend
+
+This is a Next.js frontend application for GitHub Pull Request analysis. Users can provide a public GitHub PR URL and the LLM will analyze the pull request and answer queries related to it.
 
 ## Getting Started
 
@@ -16,9 +18,12 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **PR Analysis**: Submit a public GitHub PR URL for automated analysis
+- **Interactive Q&A**: Ask questions about the pull request and get AI-powered responses
+- **Code Review**: Get insights on code quality, potential issues, and suggestions
+- **User-friendly Interface**: Clean and intuitive UI for seamless interaction
 
 ## Learn More
 
