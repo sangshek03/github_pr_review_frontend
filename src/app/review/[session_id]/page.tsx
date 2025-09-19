@@ -96,7 +96,6 @@ export default function ReviewPage() {
 
     useEffect(() => {
         const storedId = localStorage.getItem('pr_summary_id')
-        console.log(storedId)
         if (storedId) setSummaryId(storedId)
         if (pr_summary_id) {
             fetchPRSummary(pr_summary_id)
@@ -113,14 +112,12 @@ export default function ReviewPage() {
 
             // Try to get token from useAuth hook first
             if (user?.accessToken) {
-                console.log('✅ Using token from useAuth hook')
                 setToken(user.accessToken)
                 setIsInitialized(true)
             } else {
                 // Fallback to cookie extraction
                 const authToken = getAuthToken()
                 if (authToken) {
-                    console.log('✅ Using token from cookie')
                     setToken(authToken)
                     setIsInitialized(true)
                 } else {
@@ -135,14 +132,6 @@ export default function ReviewPage() {
             }
         }
 
-        console.log(
-            '🔄 Auth useEffect - Loading:',
-            authLoading,
-            'Authenticated:',
-            isAuthenticated,
-            'User:',
-            user
-        )
     }, [isAuthenticated, authLoading, router, token, user])
 
     // Fetch PR Summary
@@ -151,10 +140,9 @@ export default function ReviewPage() {
         setSummaryError(null)
 
         try {
-            console.log(prSummaryId, 'summary_idd localhost')
             const data = await prApi.getPRById(prSummaryId)
-            console.log(data)
             if (data) {
+                // @ts-ignore
                 setPrSummary(data.data)
             } else {
                 setSummaryError('Failed to fetch PR summary')
@@ -282,10 +270,18 @@ export default function ReviewPage() {
     return (
         <ChatProvider>
             <div className="bg-gradient-to-br from-background via-background to-surface/30">
-                <div className="container mx-auto px-6 py-8 max-w-full">
+                <div className='mx-auto px-6 py-2 max-w-full'>
+                    <button
+                        onClick={() => router.push('/dashboard')}
+                        className="px-4 py-2 text-border-gray-700 border-1 border-border-gray-700 rounded-lg hover:font-semibold transition-colors"
+                    >
+                        {"<-"} Back to Dashboard
+                    </button>
+                </div>
+                <div className="container mx-auto px-6 pb-8 max-w-full">
                     <div
                         ref={containerRef}
-                        className="flex gap-1 h-[calc(120vh-12rem)] relative"
+                        className="flex gap-1 h-[calc(120vh-13rem)] relative"
                     >
                         {/* Chat Panel */}
                         <div

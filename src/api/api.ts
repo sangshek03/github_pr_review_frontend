@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
 
 // Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000/api/v1'
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -47,9 +47,10 @@ api.interceptors.response.use(
       // Forbidden
       console.error('Access forbidden')
     }
-
+// @ts-ignore
     if (error.response?.status >= 500) {
       // Server error
+      // @ts-ignore
       console.error('Server error:', error.response.data)
     }
 

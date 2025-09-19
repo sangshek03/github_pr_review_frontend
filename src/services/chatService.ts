@@ -19,6 +19,7 @@ export interface ChatEvents {
     onDisconnect: () => void
     onError: (error: string) => void
 }
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export class ChatService {
     private socket: Socket | null = null
@@ -27,7 +28,7 @@ export class ChatService {
     private typingTimeout: NodeJS.Timeout | null = null
     private baseUrl: string
 
-    constructor(token: string, baseUrl: string = 'http://localhost:8000') {
+    constructor(token: string, baseUrl: string = API_BASE_URL || 'localhost:8000') {
         this.token = token
         this.baseUrl = baseUrl
     }
@@ -43,13 +44,11 @@ export class ChatService {
                 })
 
                 this.socket.on('connect', () => {
-                    console.log('Connected to chat server')
                     events.onConnect()
                     resolve(true)
                 })
 
                 this.socket.on('disconnect', (reason) => {
-                    console.log('Disconnected from chat server:', reason)
                     events.onDisconnect()
                 })
 
@@ -65,11 +64,9 @@ export class ChatService {
                 })
 
                 this.socket.on('session_joined', (data) => {
-                    console.log('Joined session:', data.session_id)
                 })
 
                 this.socket.on('message:new', (data) => {
-                    console.log(data, 'here context coming')
                     const message: Message = {
                         id: data.message.message_id,
                         content: data.message.content,
@@ -81,7 +78,6 @@ export class ChatService {
                         metadata: data.response_metadata,
                     }
                     events.onMessage(message)
-                    console.log(message,'message, content is undefined')
                 })
 
                 this.socket.on('message:typing', (data) => {
@@ -89,7 +85,6 @@ export class ChatService {
                 })
 
                 this.socket.on('session_users', (data) => {
-                    console.log('Session users:', data)
                 })
             } catch (error) {
                 reject(error)

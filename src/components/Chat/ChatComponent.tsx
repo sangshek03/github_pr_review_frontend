@@ -29,7 +29,6 @@ export default function ChatComponent({ sessionId, token, className = '' }: Chat
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    console.log(state.messages)
   }, [state.messages, state.isWaitingForResponse]);
 
   // Focus input when connected and not busy

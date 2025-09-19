@@ -1,4 +1,5 @@
 import { apiClient, ApiResponse } from './api'
+// @ts-ignore
 import { PRDetailsResponse, FetchAndSaveResponse, UserPRsResponse } from '@/types/pr'
 
 // PR API request types
@@ -108,7 +109,6 @@ export const prApi = {
   // Get specific PR details by ID
   getPRById: async (prId: string): Promise<PRSummary> => {
     try {
-      console.log(prId)
       const response = await apiClient.get<PRSummary>(`/pr/pr_summary/${prId}`)
       return response.data
     } catch (error: any) {

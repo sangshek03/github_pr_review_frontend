@@ -34,7 +34,6 @@ export function useAuth(): AuthState {
           return
         }
 
-        console.log('🔍 Checking auth at:', `${baseUrl}/auth/me`)
 
         const res = await fetch(`${baseUrl}/auth/me`, {
           method: 'GET',
@@ -42,26 +41,21 @@ export function useAuth(): AuthState {
           signal: controller.signal,
         })
 
-        console.log('📡 Auth response status:', res.status, res.statusText)
 
         if (!res.ok) {
-          console.log('❌ Auth response not ok:', res.status)
           setAuthState({ isAuthenticated: false, loading: false, user: null })
           return
         }
 
         const data = await res.json()
-        console.log('📦 Auth response data:', data)
 
         if (data?.user) {
-          console.log('✅ User authenticated:', data.user.user_id)
           setAuthState({
             isAuthenticated: true,
             loading: false,
             user: data.user,
           })
         } else {
-          console.log('⚠️ No user in response')
           setAuthState({ isAuthenticated: false, loading: false, user: null })
         }
       } catch (error: any) {

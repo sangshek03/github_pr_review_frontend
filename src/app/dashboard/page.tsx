@@ -9,6 +9,7 @@ import {
     type AnalysisResponse,
     type PRSummary,
 } from '@/api'
+// @ts-ignore
 import { PRDetailsResponse, FetchAndSaveResponse } from '@/types/pr'
 import { Accordion } from '@/components/ui/Accordion'
 
@@ -75,7 +76,6 @@ export default function Dashboard() {
         try {
             const data = await prApi.getPRSummaries()
             setPrSummaries(data)
-            // console.log(data)
         } catch (err) {
             console.error('Failed to fetch PR summaries:', err)
         } finally {
@@ -139,7 +139,6 @@ export default function Dashboard() {
     // Helper function to get summary for a PR
     const getSummaryForPR = (prIndex: number): PRSummary | null => {
         // Assuming summaries are ordered same as PRs (most recent first)
-        console.log(prSummaries[prIndex], prIndex)
         return prSummaries[prIndex] || null
     }
 

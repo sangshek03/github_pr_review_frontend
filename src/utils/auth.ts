@@ -16,7 +16,6 @@ export function getAuthToken(): string | null {
     if (baseUrl) {
       // We'll return a placeholder for now and let the ChatService handle the async auth
       // This is a synchronous function, so we can't make async calls here
-      console.log('🔗 Auth token will be fetched asynchronously by ChatService');
     }
 
     // Fallback to cookie-based auth
@@ -25,7 +24,6 @@ export function getAuthToken(): string | null {
       .find(row => row.startsWith('auth-cookie='));
 
     if (!cookies) {
-      console.log('🍪 No auth-cookie found');
       return null;
     }
 
