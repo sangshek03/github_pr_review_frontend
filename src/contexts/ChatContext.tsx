@@ -233,14 +233,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       // Create new chat service
       chatService.current = new ChatService(token);
 
+      console.log('connection websocket')
+
       // Connect to WebSocket
       await chatService.current.connect(chatEvents);
+
+      console.log('done websocket')
 
       // Join the session
       chatService.current.joinSession(sessionId);
 
     } catch (error) {
       const errorMessage = (error as Error).message || 'Failed to connect to chat';
+      console.log('error websocket', error)
       dispatch({ type: 'SET_ERROR', payload: errorMessage });
     }
   };

@@ -20,6 +20,7 @@ export interface ChatEvents {
     onError: (error: string) => void
 }
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:8000';
 
 export class ChatService {
     private socket: Socket | null = null
@@ -27,16 +28,18 @@ export class ChatService {
     private currentSessionId: string | null = null
     private typingTimeout: NodeJS.Timeout | null = null
     private baseUrl: string
+    private wsUrl: string
 
     constructor(token: string, baseUrl: string = API_BASE_URL || 'localhost:8000') {
         this.token = token
         this.baseUrl = baseUrl
+        this.wsUrl = WS_BASE_URL
     }
 
     connect(events: ChatEvents): Promise<boolean> {
         return new Promise((resolve, reject) => {
             try {
-                this.socket = io(`${this.baseUrl}/chat`, {
+                this.socket = io(`${this.wsUrl}/chat`, {
                     auth: {
                         token: this.token,
                     },
