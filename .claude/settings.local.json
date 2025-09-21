@@ -4,7 +4,9 @@
       "Read(//d/practise/pr_agent_backend/**)",
       "Bash(npm install:*)",
       "Bash(npm uninstall:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm start)"
     ],
     "deny": [],
     "ask": []
